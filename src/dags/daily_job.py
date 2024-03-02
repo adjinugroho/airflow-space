@@ -26,13 +26,16 @@ with DAG(
     schedule_interval="0 6 * * *",
     catchup=False,
 ) as dag:
-    logCleaner = LogCleaner(CommonHelper.dtUtcToLocalISO(dag.get_latest_execution_date()))
+    logCleaner = LogCleaner(
+        CommonHelper.dtUtcToLocalISO(dag.get_latest_execution_date())
+    )
 
     taskStart = EmptyOperator(task_id="Start")
 
     taskEnd = EmptyOperator(task_id="End")
 
     with TaskGroup(group_id="LogCleaning") as tgLogCleaning:
+
         @task(task_id="CleanSchedulerLog")
         def CleanSchedulerLog():
             logCleaner.SchedulerLog()
@@ -49,8 +52,4 @@ with DAG(
         CleanProcManagerLog()
         CleanDagLog()
 
-    (
-        taskStart
-        >> tgLogCleaning
-        >> taskEnd
-    )
+    taskStart >> tgLogCleaning >> taskEnd
