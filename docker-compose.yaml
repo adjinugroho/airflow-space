@@ -32,8 +32,6 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/src/controllers:/opt/airflow/controllers
     - ${AIRFLOW_PROJ_DIR:-.}/src/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/src/logs:/opt/airflow/logs
-    - ${AIRFLOW_PROJ_DIR:-.}/src/plugins:/opt/airflow/plugins
-    - ${AIRFLOW_PROJ_DIR:-.}/src/services:/opt/airflow/services
     - ${AIRFLOW_PROJ_DIR:-.}/src/utils:/opt/airflow/utils
   user: ${AIRFLOW_UID}
   depends_on:
@@ -122,8 +120,8 @@ services:
           echo
         fi
 
-        mkdir -p /sources/src/logs /sources/src/dags /sources/src/plugins /sources/src/controllers /sources/src/data_files /sources/src/services /sources/src/utils
-        chown -R "${AIRFLOW_UID}:0" /sources/src/{logs,dags,plugins,controllers,data_files,services,utils}
+        mkdir -p /sources/src/logs /sources/src/dags /sources/src/controllers /sources/src/utils
+        chown -R "${AIRFLOW_UID}:0" /sources/src/{logs,dags,controllers,utils}
         exec /entrypoint airflow version
     environment:
       <<: *airflow-common-env
