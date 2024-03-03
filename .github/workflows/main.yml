@@ -5,7 +5,8 @@ on:
     branches: main
 
 jobs:
-  build:
+  deploy:
+    name: Deploy to VPS
     runs-on: ubuntu-latest
     steps:
     - name: Deploy using SSH
