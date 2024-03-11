@@ -1,4 +1,4 @@
-FROM apache/airflow:2.8.2-python3.11
+FROM apache/airflow:latest-python3.11
 
 ENV TZ=Asia/Jakarta
 ENV PYTHONPATH "${PYTHONPATH}:${AIRFLOW_HOME}"
