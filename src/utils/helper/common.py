@@ -2,16 +2,16 @@ from airflow.models import Variable
 from datetime import datetime
 import pytz
 
-from utils.constants.airflow.variable import AirflowVariable
+from utils.helper.variable import AirflowVariable
 
-localTz = pytz.timezone(Variable.get(AirflowVariable.LocalTZ))
+tz_local = pytz.timezone(Variable.get(AirflowVariable.tz_local))
 
 class CommonHelper:
-    def pytzLocalTz():
-        return localTz
+    def pytztz_local():
+        return tz_local
 
     def dtUtcToLocalISO(dtUtc: datetime | None):
         if dtUtc is None:
-            return datetime.now(tz=localTz)
+            return datetime.now(tz=tz_local)
         else:
-            return dtUtc.replace(tzinfo=pytz.utc).astimezone(localTz)
+            return dtUtc.replace(tzinfo=pytz.utc).astimezone(tz_local)

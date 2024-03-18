@@ -1,17 +1,19 @@
 from airflow.models import Variable
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+
 from datetime import datetime, timedelta
 
 import logging
 import os
 
-from utils.constants.airflow.variable import AirflowVariable
+from utils.helper.variable import AirflowVariable
 
 
-class LogCleaner(object):
+class DailyJobTasks(object):
     def __init__(self, dateProc):
-        super(LogCleaner, self).__init__()
+        super(DailyJobTasks, self).__init__()
 
-        defLogCount = int(Variable.get(AirflowVariable.DefaultLogCount))
+        defLogCount = int(Variable.get(AirflowVariable.def_log_count))
 
         self.dirAirflowLogs = "/opt/airflow/logs"
         self.dirAirflowProcManager = "/opt/airflow/logs/dag_processor_manager"
@@ -19,7 +21,7 @@ class LogCleaner(object):
             tzinfo=None
         )
 
-    def SchedulerLog(self):
+    def scheduler_log(self):
         for dir in [
             f
             for f in os.scandir(self.dirAirflowLogs + "/scheduler")
@@ -39,10 +41,10 @@ class LogCleaner(object):
 
                 logging.info(f"Scheduler log {dir.name} removed!")
 
-    def ProcManagerLog(self):
+    def proc_manager_log(self):
         pass
 
-    def DagLog(self):
+    def dag_log(self):
         for dir in [
             f
             for f in os.scandir(self.dirAirflowLogs)
@@ -69,3 +71,16 @@ class LogCleaner(object):
                         os.rmdir(dirDag)
 
                         logging.info(f"DAG log {dirDag.name} removed!")
+
+    def xcom_cleanup(self):
+        hook = PostgresHook(postgres_conn_id="db_airflow")
+        conn = hook.get_conn()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            f"DELETE FROM xcom WHERE timestamp = '{ self.logToRemoveDate }'"
+        )
+
+        conn.commit()
+        cursor.close()
+        conn.close()

@@ -1,21 +1,22 @@
 from airflow import DAG
 from airflow.decorators import task
-from airflow.models import Variable
+from airflow.models import Variable, XCom
 from airflow.operators.empty import EmptyOperator
+from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 from datetime import datetime, timedelta
 
-from controllers.log_cleaner import LogCleaner
-from utils.constants.airflow.variable import AirflowVariable
+from controllers.daily_job import DailyJobTasks
+from utils.helper.variable import AirflowVariable
 from utils.helper.common import CommonHelper
 
 default_args = {
     "depends_on_past": False,
     "owner": "Adji Nugroho",
-    "email": [Variable.get(AirflowVariable.ErrorEmailTo)],
+    "email": [Variable.get(AirflowVariable.error_email)],
     "email_on_failure": True,
     "email_on_retry": True,
-    "start_date": datetime(2024, 1, 1, tzinfo=CommonHelper.pytzLocalTz()),
+    "start_date": datetime(2024, 1, 1, tzinfo=CommonHelper.pytztz_local()),
     "retries": 1,
     "retry_delay": timedelta(minutes=30),
 }
@@ -26,30 +27,38 @@ with DAG(
     schedule_interval="0 6 * * *",
     catchup=False,
 ) as dag:
-    logCleaner = LogCleaner(
+    logCleaner = DailyJobTasks(
         CommonHelper.dtUtcToLocalISO(dag.get_latest_execution_date())
     )
 
-    taskStart = EmptyOperator(task_id="Start")
+    task_start = EmptyOperator(task_id="Start")
 
-    taskEnd = EmptyOperator(task_id="End")
+    task_end = EmptyOperator(task_id="End")
 
-    with TaskGroup(group_id="LogCleaning") as tgLogCleaning:
+    with TaskGroup(group_id="log_cleaning") as tg_log_cleaning:
 
-        @task(task_id="CleanSchedulerLog")
-        def CleanSchedulerLog():
-            logCleaner.SchedulerLog()
+        @task(task_id="scheduler_log")
+        def scheduler_log():
+            logCleaner.scheduler_log()
 
-        @task(task_id="CleanDagLog")
-        def CleanDagLog():
-            logCleaner.DagLog()
+        @task(task_id="dag_log")
+        def dag_log():
+            logCleaner.dag_log()
 
-        @task(task_id="CleanProcManagerLog")
-        def CleanProcManagerLog():
-            logCleaner.ProcManagerLog()
+        @task(task_id="proc_manager_log")
+        def proc_manager_log():
+            logCleaner.proc_manager_log()
 
-        CleanSchedulerLog()
-        CleanProcManagerLog()
-        CleanDagLog()
+        scheduler_log()
+        proc_manager_log()
+        dag_log()
 
-    taskStart >> tgLogCleaning >> taskEnd
+    with TaskGroup(group_id="misc_cleanup") as tg_misc_cleanup:
+
+        @task(task_id="xcom")
+        def xcom_data():
+            logCleaner.xcom_cleanup()
+
+        xcom_data()
+
+    task_start >> [tg_log_cleaning, tg_misc_cleanup] >> task_end
