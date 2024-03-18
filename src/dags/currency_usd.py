@@ -61,15 +61,15 @@ with DAG(
         connection = hook.get_conn()
         cursor = connection.cursor()
         
-        exist = cursor.execute(f"SELECT * FROM currency WHERE date = '{jsonData["date"]}'")
+        exist = cursor.execute(f"SELECT * FROM currency WHERE date = '{jsonData['date']}'")
         
         if len(exist) > 0:
             cursor.execute(
-                f"UPDATE currency SET idr = {jsonData["usd"]["idr"]} WHERE date = '{jsonData["date"]}'"
+                f"UPDATE currency SET idr = {jsonData['usd']['idr']} WHERE date = '{jsonData['date']}'"
             )
         else:
             cursor.execute(
-                f"INSERT INTO currency (date, idr) VALUES ('{jsonData["date"]}', {jsonData["usd"]["idr"]})"
+                f"INSERT INTO currency (date, idr) VALUES ('{jsonData['date']}', {jsonData['usd']['idr']})"
             )
 
         connection.commit()
