@@ -58,12 +58,11 @@ with DAG(
         jsonData = json.loads(currData)
 
         hook = PostgresHook(postgres_conn_id="db_currency")
-        connection = hook.get_conn()
-        cursor = connection.cursor()
+        conn  = hook.get_conn()
+        cursor = conn .cursor()
         
-        exist = cursor.execute(f"SELECT * FROM currency WHERE date = '{jsonData['date']}'")
-        
-        if len(exist) > 0:
+        cursor.execute(f"SELECT * FROM currency WHERE date = '{jsonData['date']}'")
+        if len(cursor) > 0:
             cursor.execute(
                 f"UPDATE currency SET idr = {jsonData['usd']['idr']} WHERE date = '{jsonData['date']}'"
             )
@@ -72,9 +71,9 @@ with DAG(
                 f"INSERT INTO currency (date, idr) VALUES ('{jsonData['date']}', {jsonData['usd']['idr']})"
             )
 
-        connection.commit()
+        conn .commit()
         cursor.close()
-        connection.close()
+        conn .close()
 
     cleanup = PythonOperator(
         task_id="CleanUp", python_callable=Cleanup, provide_context=True
