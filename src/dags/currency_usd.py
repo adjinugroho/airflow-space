@@ -60,11 +60,19 @@ with DAG(
         hook = PostgresHook(postgres_conn_id="db_currency")
         connection = hook.get_conn()
         cursor = connection.cursor()
-
-        cursor.execute(
-            "INSERT INTO currency (date, idr) VALUES (%s, %s)",
-            (jsonData["date"], jsonData["usd"]["idr"]),
-        )
+        
+        exist = cursor.execute(" SELECT * FROM currency WHERE date = %s;", (jsonData["date"]))
+        
+        if len(exist) > 0:
+            cursor.execute(
+                "UPDATE currency SET idr = %s WHERE date = %s",
+                (jsonData["usd"]["idr"], jsonData["date"]),
+            )
+        else:
+            cursor.execute(
+                "INSERT INTO currency (date, idr) VALUES (%s, %s)",
+                (jsonData["date"], jsonData["usd"]["idr"]),
+            )
 
         connection.commit()
         cursor.close()
